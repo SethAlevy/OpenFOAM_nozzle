@@ -1,0 +1,109 @@
+project:
+  description: "Baseline supersonic rocket nozzle simulation configuration"
+
+controls:
+  
+  application: "rhoCentralFoam"      # simpleFoam, pimpleFoam, rhoCentralFoam, sonicFoam
+  
+  # Time control
+  start_time: 0
+  end_time: 1.0                      # Total simulation time (seconds)
+  delta_t: 0.00001                   # Time step (seconds)
+  write_interval: 100                # Write output every N time steps
+  
+  # Output format
+  write_format: "ascii"              # ascii, binary
+  write_precision: 8                 # Decimal precision
+  write_compression: "off"           # off, on
+  time_format: "general"             # general, scientific, fixed
+  time_precision: 6
+  
+  # Cleanup
+  purge_write: 2                     # Keep last N time directories (0 = keep all)
+
+# ========== NUMERICAL SCHEMES (fvSchemes) ==========
+numerical_schemes:
+  
+  # Time discretization
+  time_scheme: "Euler"               # Euler, backward, CrankNicolson, localEuler
+  
+  # Gradient schemes
+  default_grad: "Gauss linear"
+  grad_U: "Gauss linear"
+  grad_p: "Gauss linear"
+  
+  # Divergence (convection) schemes
+  default_div: "none"
+  div_phi_U: "Gauss linearUpwind grad(U)"          # For velocity
+  div_phi_k: "Gauss limitedLinear 1"               # For turbulence k
+  div_phi_epsilon: "Gauss limitedLinear 1"         # For turbulence epsilon
+  div_phi_omega: "Gauss limitedLinear 1"           # For turbulence omega
+  div_rho_phi_U: "Gauss linearUpwind grad(U)"      # For compressible U
+  div_rho_phi_K: "Gauss linear"                    # For kinetic energy
+  div_phi_K: "Gauss linear"                        # For kinetic energy
+  
+  # Laplacian schemes
+  default_laplacian: "Gauss linear corrected"
+  laplacian_nu_U: "Gauss linear corrected"
+  laplacian_DkEff_k: "Gauss linear corrected"
+  laplacian_DepsilonEff_epsilon: "Gauss linear corrected"
+  laplacian_DomegaEff_omega: "Gauss linear corrected"
+  
+  # Interpolation schemes
+  default_interpolation: "linear"
+  interpolate_U: "linear"
+  
+  # Surface normal gradient schemes
+  default_sn_grad: "corrected"       # corrected, uncorrected, limited
+  
+  # Flux calculation (for compressible solvers)
+  flux_scheme: "Kurganov"            # Kurganov, AUSM, Roe (for rhoCentralFoam)
+
+solver_settings:
+  algorithm: "PIMPLE"            # SIMPLE or PIMPLE
+  n_correctors: 2
+  n_non_orthogonal_correctors: 1
+  momentum_predictor: true
+  residual_control:
+    U: 1e-5
+    p: 1e-5
+    k: 1e-5
+    epsilon: 1e-5
+
+  solvers:
+    p:
+      solver: "PCG"
+      tolerance: 1e-6
+      relTol: 0.0
+      preconditioner: "DIC"
+    U:
+      solver: "PBiCG"
+      tolerance: 1e-5
+      relTol: 0.0
+      preconditioner: "DILU"
+    k:
+      solver: "PBiCG"
+      tolerance: 1e-6
+      relTol: 0.0
+    epsilon:
+      solver: "PBiCG"
+      tolerance: 1e-6
+      relTol: 0.0
+
+  relaxation_factors:
+    p: 0.3
+    U: 0.7
+    k: 0.7
+    epsilon: 0.7
+
+block_mesh:
+  wedge_angle_deg: 5.0
+  n_axial: 200
+  n_radial: 50
+  axial_grading: 1.0
+  radial_grading: 1.0
+  inlet_patch: inlet
+  outlet_patch: outlet
+  wall_patch: wall
+  wedge0_patch: wedge0
+  wedge1_patch: wedge1

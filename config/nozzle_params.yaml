@@ -1,0 +1,25 @@
+# ========== NOZZLE GEOMETRY CONFIGURATION ==========
+nozzle:
+    # Nozzle type
+    type: "parabolic" 
+
+    # Basic dimensions (meters)
+    throat_radius: 0.05      # Radius at throat (minimum point)
+    exit_radius: 0.15        # Radius at nozzle exit
+    chamber_radius: 0.075    # Radius at combustion chamber inlet
+
+    # Parabolic nozzle specific parameters
+    parabolic:
+        # Shape parameter for converging section (0.5-1.0)
+        convergent_power: 0.6
+        # Shape parameter for diverging section (0.5-1.2)
+        divergent_power: 0.8
+
+    # Mesh generation parameters
+    mesh:
+        axial_points: 200      # Number of points along nozzle axis
+        # Number of points in radial direction (if 2D mesh)
+        radial_points: 50
+
+    # Throat position (optional, default is 0)
+    throat_position: 0.0     # Axial position of throat (meters)
