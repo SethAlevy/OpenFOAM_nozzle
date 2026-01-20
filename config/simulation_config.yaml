@@ -107,3 +107,31 @@ block_mesh:
   wall_patch: wall
   wedge0_patch: wedge0
   wedge1_patch: wedge1
+
+# ========== CONSTANT DIRECTORY ==========
+constant:
+  # Turbulence model
+  turbulence:
+    simulation_type: "RAS"           # laminar, RAS, LES
+    ras_model: "kEpsilon"            # kEpsilon, kOmega, kOmegaSST, realizableKE, SpalartAllmaras
+    turbulence: true
+    print_coeffs: true
+  
+  # Thermophysical properties (for compressible solvers)
+  thermophysical:
+    thermo_type: "hePsiThermo"
+    mixture: "pureMixture"
+    transport: "sutherland"          # const, sutherland
+    thermo: "janaf"                  # hConst, janaf, eConst
+    equation_of_state: "perfectGas"  # perfectGas, incompressiblePerfectGas, rhoConst
+    mol_weight: 28.96                # kg/kmol (air)
+    Cp: 1005.0                       # J/kg/K
+    Hf: 0.0                          # J/kg
+    mu: 1.81e-5                      # Pa·s
+    Ts: 110.4                        # K (Sutherland temperature)
+    Pr: 0.7
+  
+  # Transport properties (for incompressible solvers - optional)
+  transport:
+    nu: 1.48e-5                      # m^2/s
+    transport_model: "Newtonian"

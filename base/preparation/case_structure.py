@@ -1,10 +1,12 @@
 from pathlib import Path
 from base.config_loader.simulation_config import load_config
 from base.config_loader.nozzle_config import load_nozzle_config
-from base.templates.openfoam.control_dict import generate_control_dict
-from base.templates.openfoam.fv_schemes import generate_fv_schemes
-from base.templates.openfoam.fv_solution import generate_fv_solution
-from base.templates.openfoam.block_mesh import generate_block_mesh_dict
+from base.templates.openfoam.system.control_dict import generate_control_dict
+from base.templates.openfoam.system.fv_schemes import generate_fv_schemes
+from base.templates.openfoam.system.fv_solution import generate_fv_solution
+from base.templates.openfoam.system.block_mesh import generate_block_mesh_dict
+from base.templates.openfoam.constant.turbulence_properties import generate_turbulence_properties
+from base.templates.openfoam.constant.thermophysical_properties import generate_thermophysical_properties
 
 
 class CaseBuilder:
@@ -24,6 +26,7 @@ class CaseBuilder:
         case_path = Path(case_dir)
         self._ensure_dirs(case_path)
 
+        # system/ files
         # controlDict
         ctrl_params = self.sim_loader.get_control_dict_params()
         (case_path / "system" / "controlDict").write_text(
@@ -47,6 +50,17 @@ class CaseBuilder:
         bm_params = self.sim_loader.get_block_mesh_params()
         (case_path / "system" / "blockMeshDict").write_text(
             generate_block_mesh_dict(nozzle, bm_params)
+        )
+
+        # constant/ files
+        turb_params = self.sim_loader.get_turbulence_properties_params()
+        (case_path / "constant" / "turbulenceProperties").write_text(
+            generate_turbulence_properties(turb_params)
+        )
+
+        thermo_params = self.sim_loader.get_thermophysical_properties_params()
+        (case_path / "constant" / "thermophysicalProperties").write_text(
+            generate_thermophysical_properties(thermo_params)
         )
 
         print(f"✓ Case written to: {case_path}")

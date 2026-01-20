@@ -1,7 +1,18 @@
 import yaml
 from pathlib import Path
 from typing import Dict, Any
-from base.templates.openfoam.control_dict import ControlDictParams, SolverType
+
+from base.templates.openfoam.system.control_dict import ControlDictParams, SolverType
+from base.templates.openfoam.system.fv_schemes import FvSchemesParams
+from base.templates.openfoam.system.fv_solution import FvSolutionParams, LinearSolverParams
+from base.templates.openfoam.system.block_mesh import BlockMeshParams
+from base.templates.openfoam.constant.turbulence_properties import (
+    TurbulencePropertiesParams, TurbulenceModel, RASModel
+)
+from base.templates.openfoam.constant.thermophysical_properties import (
+    ThermophysicalPropertiesParams, ThermoType, EquationOfState,
+    ThermoModel, TransportModel
+)
 
 
 class ConfigLoader:
@@ -99,7 +110,6 @@ class ConfigLoader:
         Returns:
             FvSchemesParams object
         """
-        from base.templates.openfoam.fv_schemes import FvSchemesParams
 
         schemes = self.get_numerical_schemes_config()
 
@@ -152,7 +162,6 @@ class ConfigLoader:
         Returns:
             FvSolutionParams object
         """
-        from base.templates.openfoam.fv_solution import FvSolutionParams, LinearSolverParams
 
         cfg = self.get_solver_settings_config()
         if not cfg:
@@ -195,7 +204,6 @@ class ConfigLoader:
         )
 
     def get_block_mesh_params(self) -> 'BlockMeshParams':
-        from base.templates.openfoam.block_mesh import BlockMeshParams
         bm = self.config.get('block_mesh', {}) or {}
         return BlockMeshParams(
             wedge_angle_deg=float(bm.get('wedge_angle_deg', 5.0)),
@@ -209,6 +217,41 @@ class ConfigLoader:
             wedge0_patch=bm.get('wedge0_patch', 'wedge0'),
             wedge1_patch=bm.get('wedge1_patch', 'wedge1'),
             convert_to_meters=float(bm.get('convert_to_meters', 1.0)),
+        )
+
+    def get_constant_config(self) -> Dict[str, Any]:
+        """Get constant directory configuration"""
+        return self.config.get('constant', {})
+
+    def get_turbulence_properties_params(self):
+        const = self.get_constant_config()
+        turb = const.get('turbulence', {})
+
+        return TurbulencePropertiesParams(
+            simulation_type=TurbulenceModel(
+                turb.get('simulation_type', 'RAS')),
+            ras_model=RASModel(turb.get('ras_model', 'kEpsilon')),
+            turbulence=bool(turb.get('turbulence', True)),
+            print_coeffs=bool(turb.get('print_coeffs', True))
+        )
+
+    def get_thermophysical_properties_params(self):
+        const = self.get_constant_config()
+        thermo = const.get('thermophysical', {})
+
+        return ThermophysicalPropertiesParams(
+            thermo_type=ThermoType(thermo.get('thermo_type', 'hePsiThermo')),
+            mixture=thermo.get('mixture', 'pureMixture'),
+            transport=TransportModel(thermo.get('transport', 'sutherland')),
+            thermo=ThermoModel(thermo.get('thermo', 'janaf')),
+            equation_of_state=EquationOfState(
+                thermo.get('equation_of_state', 'perfectGas')),
+            mol_weight=float(thermo.get('mol_weight', 28.96)),
+            Cp=float(thermo.get('Cp', 1005.0)),
+            Hf=float(thermo.get('Hf', 0.0)),
+            mu=float(thermo.get('mu', 1.81e-5)),
+            Ts=float(thermo.get('Ts', 110.4)),
+            Pr=float(thermo.get('Pr', 0.7))
         )
 
     def validate_config(self) -> bool:
