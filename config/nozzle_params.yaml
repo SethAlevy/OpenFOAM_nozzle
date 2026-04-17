@@ -23,3 +23,11 @@ nozzle:
 
     # Throat position (optional, default is 0)
     throat_position: 0.0     # Axial position of throat (meters)
+
+    length_model:
+        convergent_length_factor: 1.5
+        divergent_length_factor: 0.8
+        divergent_half_angle_deg: 15.0
+
+    point_distribution:
+        convergent_fraction: 0.4

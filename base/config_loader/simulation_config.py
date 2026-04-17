@@ -23,7 +23,8 @@ class ConfigLoader:
         Initialize config loader.
 
         Args:
-            config_path: Path to simulation_config.yaml file
+            config_path: Path to simulation_config.yaml file.
+            Defaults to "config/simulation_config.yaml".
         """
         self.config_path = Path(config_path)
         self.config = self._load_yaml()
@@ -37,7 +38,6 @@ class ConfigLoader:
 
         Raises:
             FileNotFoundError: If config file not found
-            yaml.YAMLError: If YAML parsing fails
         """
         if not self.config_path.exists():
             raise FileNotFoundError(
@@ -45,21 +45,12 @@ class ConfigLoader:
 
         with open(self.config_path, 'r') as f:
             config = yaml.safe_load(f)
-        print(f"✓ Config loaded from: {self.config_path}")
+        print(f"Config loaded from: {self.config_path}")
         return config
-
-    def get_project_info(self) -> Dict[str, str]:
-        """
-        Get project information.
-
-        Returns:
-            Dictionary with project details
-        """
-        return self.config.get('project', {})
 
     def get_controls_config(self) -> Dict[str, Any]:
         """
-        Get controls configuration section (controlDict parameters).
+        Get simulation controls configuration section (controlDict parameters).
 
         Returns:
             Dictionary with control settings
@@ -100,7 +91,7 @@ class ConfigLoader:
             time_precision=int(controls.get('time_precision', 6)),
             purge_write=int(controls.get('purge_write', 0)),
         )
-        print("✓ ControlDictParams created successfully")
+        print("ControlDictParams created successfully")
         return params
 
     def get_fv_schemes_params(self) -> 'FvSchemesParams':
@@ -143,7 +134,7 @@ class ConfigLoader:
             flux_scheme=schemes.get('flux_scheme')
         )
 
-        print("✓ FvSchemesParams created successfully")
+        print("FvSchemesParams created successfully")
         return params
 
     def get_solver_settings_config(self) -> Dict[str, Any]:
@@ -185,14 +176,17 @@ class ConfigLoader:
         return FvSolutionParams(
             p=to_lin('p'),
             U=to_lin('U'),
+
             k=to_lin('k') if 'k' in solvers else None,
             epsilon=to_lin('epsilon') if 'epsilon' in solvers else None,
             omega=to_lin('omega') if 'omega' in solvers else None,
+
             algorithm=cfg.get('algorithm', 'PIMPLE'),
             nCorrectors=int(cfg.get('n_correctors', 2)),
             nNonOrthogonalCorrectors=int(
                 cfg.get('n_non_orthogonal_correctors', 1)),
             momentumPredictor=bool(cfg.get('momentum_predictor', True)),
+            
             relaxation_p=float(relax.get('p', 0.3)),
             relaxation_U=float(relax.get('U', 0.7)),
             relaxation_k=float(relax.get('k', 0.7)) if 'k' in relax else None,
@@ -266,11 +260,7 @@ class ConfigLoader:
         """
         errors = []
 
-        # Validate controls section
-        controls_config = self.get_controls_config()
-        if not controls_config:
-            errors.append("Missing 'controls' section")
-        else:
+        if controls_config := self.get_controls_config():
             required_controls = [
                 'application',
                 'start_time',
@@ -278,121 +268,90 @@ class ConfigLoader:
                 'delta_t',
                 'write_interval'
             ]
-            missing_controls = [
-                param for param in required_controls if param not in controls_config]
-            if missing_controls:
+            if missing_controls := [
+                param
+                for param in required_controls
+                if param not in controls_config
+            ]:
                 errors.append(
                     f"Missing required controls parameters: {missing_controls}")
 
-        # Validate numerical_schemes section
-        schemes_config = self.get_numerical_schemes_config()
-        if not schemes_config:
-            errors.append("Missing 'numerical_schemes' section")
         else:
+            errors.append("Missing 'controls' section")
+
+        if schemes_config := self.get_numerical_schemes_config():
             required_schemes = [
                 'time_scheme',
                 'default_grad',
                 'default_div',
                 'default_laplacian'
             ]
-            missing_schemes = [
-                param for param in required_schemes if param not in schemes_config]
-            if missing_schemes:
+            if missing_schemes := [
+                param for param in required_schemes if param not in schemes_config
+            ]:
                 errors.append(
                     f"Missing required numerical_schemes parameters: {missing_schemes}")
 
-        # Validate project section (optional but recommended)
-        project_config = self.get_project_info()
-        if not project_config:
-            print("⚠ Warning: No 'project' section found (optional)")
+        else:
+            errors.append("Missing 'numerical_schemes' section")
 
         if errors:
-            raise ValueError(f"Configuration validation failed:\n" +
+            raise ValueError("Configuration validation failed:\n" + 
                              "\n".join(f"  - {e}" for e in errors))
 
-        print(f"✓ Configuration is valid")
+        print("Configuration is valid")
         return True
 
-    def print_config(self):
+    def print_config(self):    # sourcery skip: low-code-quality
         """Print full configuration in readable format"""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("SIMULATION CONFIGURATION SUMMARY")
-        print("="*60)
+        print("=" * 60)
 
-        # Project info
-        project = self.get_project_info()
-        if project:
-            print("\n[PROJECT]")
-            for key, value in project.items():
-                print(f"  {key}: {value}")
-        else:
-            print("\n[PROJECT]")
-            print("  (not configured)")
-
-        # Controls config
-        controls = self.get_controls_config()
-        if controls:
-            print("\n[CONTROLS]")
+        if controls := self.get_controls_config():
+            print("\nCONTROLS")
             for key, value in controls.items():
                 print(f"  {key}: {value}")
-        else:
-            print("\n[CONTROLS]")
-            print("  (not configured)")
 
-        # Numerical schemes config
-        schemes = self.get_numerical_schemes_config()
-        if schemes:
-            print("\n[NUMERICAL SCHEMES]")
+        if schemes := self.get_numerical_schemes_config():
+            print("\nNUMERICAL SCHEMES")
 
-            # Time schemes
             if 'time_scheme' in schemes:
-                print(f"\n  Time Discretization:")
+                print("\n  Time Discretization:")
                 print(f"    {schemes['time_scheme']}")
 
-            # Gradient schemes
-            grad_keys = [k for k in schemes.keys() if 'grad' in k.lower()]
-            if grad_keys:
-                print(f"\n  Gradient Schemes:")
+            if grad_keys := [k for k in schemes.keys() if 'grad' in k.lower()]:
+                print("\n  Gradient Schemes:")
                 for key in grad_keys:
                     print(f"    {key}: {schemes[key]}")
 
-            # Divergence schemes
-            div_keys = [k for k in schemes.keys() if 'div' in k.lower()]
-            if div_keys:
-                print(f"\n  Divergence Schemes:")
+            if div_keys := [k for k in schemes.keys() if 'div' in k.lower()]:
+                print("\n  Divergence Schemes:")
                 for key in div_keys:
                     print(f"    {key}: {schemes[key]}")
 
-            # Laplacian schemes
-            laplacian_keys = [
-                k for k in schemes.keys() if 'laplacian' in k.lower()]
-            if laplacian_keys:
-                print(f"\n  Laplacian Schemes:")
+            if laplacian_keys := [
+                k for k in schemes.keys() if 'laplacian' in k.lower()
+            ]:
+                print("\n  Laplacian Schemes:")
                 for key in laplacian_keys:
                     print(f"    {key}: {schemes[key]}")
 
-            # Interpolation schemes
-            interp_keys = [
-                k for k in schemes.keys() if 'interpolat' in k.lower()]
-            if interp_keys:
-                print(f"\n  Interpolation Schemes:")
+            if interp_keys := [
+                k for k in schemes.keys() if 'interpolat' in k.lower()
+            ]:
+                print("\n  Interpolation Schemes:")
                 for key in interp_keys:
                     print(f"    {key}: {schemes[key]}")
 
             # Other schemes
             other_keys = ['default_sn_grad', 'flux_scheme']
-            remaining = [k for k in schemes.keys() if k in other_keys]
-            if remaining:
-                print(f"\n  Other Schemes:")
+            if remaining := [k for k in schemes.keys() if k in other_keys]:
+                print("\n  Other Schemes:")
                 for key in remaining:
                     print(f"    {key}: {schemes[key]}")
-        else:
-            print("\n[NUMERICAL SCHEMES]")
-            print("  (not configured)")
 
-        # Solver settings
-        solver_settings = self.get_solver_settings_config()
-        if solver_settings:
+        if solver_settings := self.get_solver_settings_config():
             print("\n[SOLVER SETTINGS]")
             for key, value in solver_settings.items():
                 if key == "solvers":
@@ -403,11 +362,8 @@ class ConfigLoader:
                             print(f"      {param_key}: {param_value}")
                 else:
                     print(f"  {key}: {value}")
-        else:
-            print("\n[SOLVER SETTINGS]")
-            print("  (not configured)")
 
-        print("\n" + "="*60 + "\n")
+        print("\n" + "=" * 60 + "\n")
 
 
 def load_config(config_path: str = "config/simulation_config.yaml") -> ConfigLoader:

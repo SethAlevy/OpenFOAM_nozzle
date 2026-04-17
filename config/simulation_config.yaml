@@ -1,8 +1,4 @@
-project:
-  description: "Baseline supersonic rocket nozzle simulation configuration"
-
 controls:
-  
   application: "rhoCentralFoam"      # simpleFoam, pimpleFoam, rhoCentralFoam, sonicFoam
   
   # Time control
