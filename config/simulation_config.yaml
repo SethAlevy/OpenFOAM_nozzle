@@ -98,11 +98,18 @@ block_mesh:
   n_radial: 50
   axial_grading: 1.0
   radial_grading: 1.0
-  inlet_patch: inlet
-  outlet_patch: outlet
-  wall_patch: wall
-  wedge0_patch: wedge0
-  wedge1_patch: wedge1
+  uniform_axial_spacing: true
+
+  # Optional boundary layer refinement near wall
+  boundary_layer:
+    enabled: true
+
+    # Mode 1: explicit layers + expansion ratio
+    n_layers: 20
+    expansion_ratio: 1.15
+
+    # Mode 2: first layer absolute thickness (meters)
+    # first_layer_thickness: 1.0e-4
 
 # ========== CONSTANT DIRECTORY ==========
 constant:

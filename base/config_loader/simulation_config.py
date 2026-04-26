@@ -5,7 +5,7 @@ from typing import Dict, Any
 from base.templates.openfoam.system.control_dict import ControlDictParams, SolverType
 from base.templates.openfoam.system.fv_schemes import FvSchemesParams
 from base.templates.openfoam.system.fv_solution import FvSolutionParams, LinearSolverParams
-from base.templates.openfoam.system.block_mesh import BlockMeshParams
+from base.templates.openfoam.system.block_mesh import BlockMeshParams, BoundaryLayerParams
 from base.templates.openfoam.constant.turbulence_properties import (
     TurbulencePropertiesParams, TurbulenceModel, RASModel
 )
@@ -186,7 +186,7 @@ class ConfigLoader:
             nNonOrthogonalCorrectors=int(
                 cfg.get('n_non_orthogonal_correctors', 1)),
             momentumPredictor=bool(cfg.get('momentum_predictor', True)),
-            
+
             relaxation_p=float(relax.get('p', 0.3)),
             relaxation_U=float(relax.get('U', 0.7)),
             relaxation_k=float(relax.get('k', 0.7)) if 'k' in relax else None,
@@ -197,20 +197,28 @@ class ConfigLoader:
             residual_control=residual_control,
         )
 
-    def get_block_mesh_params(self) -> 'BlockMeshParams':
-        bm = self.config.get('block_mesh', {}) or {}
+    def get_block_mesh_params(self) -> BlockMeshParams:
+        bm = self.config.get("block_mesh", {})
+        bl = bm.get("boundary_layer", {})
+
         return BlockMeshParams(
-            wedge_angle_deg=float(bm.get('wedge_angle_deg', 5.0)),
-            n_axial=int(bm.get('n_axial', 200)),
-            n_radial=int(bm.get('n_radial', 50)),
-            axial_grading=float(bm.get('axial_grading', 1.0)),
-            radial_grading=float(bm.get('radial_grading', 1.0)),
-            inlet_patch=bm.get('inlet_patch', 'inlet'),
-            outlet_patch=bm.get('outlet_patch', 'outlet'),
-            wall_patch=bm.get('wall_patch', 'wall'),
-            wedge0_patch=bm.get('wedge0_patch', 'wedge0'),
-            wedge1_patch=bm.get('wedge1_patch', 'wedge1'),
-            convert_to_meters=float(bm.get('convert_to_meters', 1.0)),
+            wedge_angle_deg=float(bm.get("wedge_angle_deg", 5.0)),
+            n_axial=int(bm.get("n_axial", 200)),
+            n_radial=int(bm.get("n_radial", 50)),
+            axial_grading=float(bm.get("axial_grading", 1.0)),
+            radial_grading=float(bm.get("radial_grading", 1.0)),
+            uniform_axial_spacing=bool(bm.get("uniform_axial_spacing", True)),
+            inlet_patch=bm.get("inlet_patch", "inlet"),
+            outlet_patch=bm.get("outlet_patch", "outlet"),
+            wall_patch=bm.get("wall_patch", "wall"),
+            wedge0_patch=bm.get("wedge0_patch", "wedge0"),
+            wedge1_patch=bm.get("wedge1_patch", "wedge1"),
+            boundary_layer=BoundaryLayerParams(
+                enabled=bool(bl.get("enabled", False)),
+                n_layers=bl.get("n_layers"),
+                expansion_ratio=bl.get("expansion_ratio"),
+                first_layer_thickness=bl.get("first_layer_thickness"),
+            ),
         )
 
     def get_constant_config(self) -> Dict[str, Any]:
@@ -296,8 +304,8 @@ class ConfigLoader:
             errors.append("Missing 'numerical_schemes' section")
 
         if errors:
-            raise ValueError("Configuration validation failed:\n" + 
-                             "\n".join(f"  - {e}" for e in errors))
+            raise ValueError("Configuration validation failed:\n"
+                             + "\n".join(f"  - {e}" for e in errors))
 
         print("Configuration is valid")
         return True
